@@ -12,6 +12,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Project.associate = models => {
+        Project.belongsTo(models.User, { foreignKey: 'ownerId', as: 'owner' });
+        Project.belongsToMany(models.User, {
+          through: models.ProjectMember,
+          foreignKey: 'projectId',
+          otherKey: 'userId',
+          as: 'members'
+        });
+        Project.hasMany(models.DockerFile, { foreignKey: 'projectId', as: 'dockerFiles' });
+      };
     }
   }
   Project.init({
@@ -29,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       type: Sequelize.STRING,
       allowNull: true
     },
-    owner_id: {
+    ownerId: {
       type: Sequelize.UUID,
       allowNull: false,
       references: {
