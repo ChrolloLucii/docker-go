@@ -1,8 +1,8 @@
 'use strict';
-/** @type {import('sequelize-cli').Migration} */
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('docker_files', {
+    await queryInterface.createTable('project_versions', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
@@ -19,18 +19,13 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      name: {
+      snapshot: {
+        type: Sequelize.JSONB,
+        allowNull: false
+      },
+      comment: {
         type: Sequelize.STRING,
-        allowNull: false
-      },
-      content: {
-        type: Sequelize.TEXT,
-        allowNull: false
-      },
-      position: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: 0
+        allowNull: true
       },
       created_at: {
         type: Sequelize.DATE,
@@ -46,6 +41,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('docker_files');
+    await queryInterface.dropTable('project_versions');
   }
 };
