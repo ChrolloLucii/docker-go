@@ -1,7 +1,7 @@
 'use strict';
-const { Model, DataTypes } = require('sequelize');
+import { Model, DataTypes } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   class DockerFile extends Model {
     static associate(models) {
       DockerFile.belongsTo(models.Project, {
@@ -10,7 +10,7 @@ module.exports = (sequelize) => {
       });
     }
   }
-
+  DockerFile
   DockerFile.init({
     id: {
       type: DataTypes.UUID,

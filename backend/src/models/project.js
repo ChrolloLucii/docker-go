@@ -1,9 +1,6 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
-const { Sequelize } = require('.');
-module.exports = (sequelize, DataTypes) => {
+import { Model, DataTypes } from 'sequelize';
+
+export default (sequelize) => {
   class Project extends Model {
     /**
      * Helper method for defining associations.
@@ -24,21 +21,21 @@ module.exports = (sequelize, DataTypes) => {
   }
   Project.init({
     id: {
-      type: Sequelize.UUID,
-      defaultValue: Sequelize.UUIDV4,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       allowNull: false
     },
     name: {
-      type: Sequelize.STRING,
+      type: DataTypes.STRING,
       allowNull: false
     },
     description: {
-      type: Sequelize.STRING,
+      type: DataTypes.STRING,
       allowNull: true
     },
     ownerId: {
-      type: Sequelize.UUID,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'users',
@@ -48,14 +45,14 @@ module.exports = (sequelize, DataTypes) => {
       onUpdate: 'CASCADE'
     },
     createdAt: {
-      type: Sequelize.DATE,
+      type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.NOW
+      defaultValue: DataTypes.NOW
     },
     updatedAt: {
-      type: Sequelize.DATE,
+      type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.NOW
+      defaultValue: DataTypes.NOW
     } 
   }, {
     sequelize,

@@ -1,15 +1,12 @@
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  class ProjectVersion extends Model {
+  class ProjectMember extends Model {
     static associate(models) {
-      ProjectVersion.belongsTo(models.Project, {
-        foreignKey: 'projectId',
-        as: 'project'
-      });
+      // Можно добавить ассоциации, если нужно
     }
   }
-  ProjectVersion.init({
+  ProjectMember.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -21,20 +18,21 @@ export default (sequelize) => {
       allowNull: false,
       field: 'project_id'
     },
-    snapshot: {
-      type: DataTypes.JSONB,
-      allowNull: false
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'user_id'
     },
-    comment: {
+    role: {
       type: DataTypes.STRING,
       allowNull: true
     }
   }, {
     sequelize,
-    modelName: 'ProjectVersion',
-    tableName: 'project_versions',
+    modelName: 'ProjectMember',
+    tableName: 'project_members',
     underscored: true,
     timestamps: true
   });
-  return ProjectVersion;
+  return ProjectMember;
 };

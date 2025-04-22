@@ -1,7 +1,7 @@
+import db from '../models/index.js';
+const { User } = db;
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import {User} from '../models/index.js';
-
 export default class AuthService {
     static async register({username, email, password}){
         if (!username || !email || !password){
