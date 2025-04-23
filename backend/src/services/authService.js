@@ -1,5 +1,4 @@
-import db from '../models/index.js';
-const { User } = db;
+import { User } from '../models/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 export default class AuthService {

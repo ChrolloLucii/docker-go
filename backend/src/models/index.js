@@ -33,5 +33,5 @@ Object.keys(db).forEach(modelName => {
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
-
+export const { User, Project, DockerFile, ProjectVersion, ProjectMember } = db;
 export default db;
