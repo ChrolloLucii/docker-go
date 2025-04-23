@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import errorMiddleware from "./src/middlewares/errorMiddleware.js";
 import authRoutes from './src/routes/auth.js';
-
+import projectRoutes from './src/routes/project.js';
 dotenv.config();
 
 const app = express();
@@ -16,9 +16,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "OK" });
 });
 
-
+app.use('/api/projects', projectRoutes);
+app.use('/api/auth', authRoutes);
 app.use(errorMiddleware);
-app.use('/api/auth', authRoutes)
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
 });
