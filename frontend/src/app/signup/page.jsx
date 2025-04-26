@@ -6,10 +6,11 @@ import axios from "axios";
 import { useState } from "react";
 import clsx from "clsx";
 import LoginOptions from "@/components/loginOptions";
-import Header from "@/components/headerAuthLogin";
+import HeaderSignUp from "@/components/headerSignUp";
 import SignUp from "@/components/signUp";
 import Footer from "@/components/footer";
-const schema = z.object({ 
+import SignUpOptions from "@/components/signUpOptions";
+const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
@@ -33,9 +34,8 @@ export default function LoginPage() {
   return (
     <div>
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-     <Header/>
-     <LoginOptions/>
-     <SignUp/>
+     <HeaderSignUp/>
+     <SignUpOptions/>
      </div>
      <Footer/>
     </div>

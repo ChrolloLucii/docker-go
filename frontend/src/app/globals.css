@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --github-color: 214 13% 16%;
+  --gitlab-color: 266 45% 54%;
+  --bitbucket-color: 212 100% 40%;
 }
 
 @theme inline {
@@ -14,7 +19,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000;
     --foreground: #ededed;
   }
 }
@@ -22,9 +27,27 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: color 0.3s, background 0.3s;
+  -webkit-font-smoothing: antialiased;
 }
 .input {
   @apply border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black/40 transition;
   background: transparent;
+}
+.auth-btn {
+  @apply transition-all duration-200 ease-in-out hover:-translate-y-[1px] hover:shadow-md font-bold text-base py-2.5;
+}
+.triangle-logo {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 17px solid black;
+  transition: border-bottom-color 0.3s ease;
+}
+@media (prefers-color-scheme: dark){
+  .triangle-logo {
+  border-bottom-color: white;
+}
 }
