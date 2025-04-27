@@ -1,16 +1,4 @@
 import {projectService} from '../services/projectService.js';
-
-
-export async function getAllProjects(req, res, next) {
-    try {
-        const projects = await projectService.getAll();
-        res.json(projects);
-
-    }
-    catch(err){
-        next(err);
-    }
-}
 export async function getAllProjectsPerUser(req, res, next) {
     try {
         const userId = req.user.id;
@@ -37,7 +25,7 @@ export async function createProject(req, res, next) {
         const userId = req.user.id;
         const {name, description} = req.body;
         const project = await projectService.create(name, description, userId);
-        res.json(project);
+        res.status(201).json(project);
     }
     catch(err){
         next(err);

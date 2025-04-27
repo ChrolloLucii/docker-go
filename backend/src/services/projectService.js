@@ -1,9 +1,6 @@
 import db from '../models/index.js';
 const { Project } = db;
 export const projectService = {
-    async getAll() {
-      return await Project.findAll();
-    },
     async getAllPerUser(ownerId) {
       return await Project.findAll({ where: { ownerId } });
     },
