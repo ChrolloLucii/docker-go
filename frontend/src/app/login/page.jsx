@@ -1,43 +1,39 @@
 'use client';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import axios from "axios";
-import { useState } from "react";
-import clsx from "clsx";
-import LoginOptions from "@/components/loginOptions";
-import Header from "@/components/headerAuthLogin";
-import SignUp from "@/components/signUp";
-import Footer from "@/components/footer";
-const schema = z.object({ 
-  email: z.string().email(),
-  password: z.string().min(6),
-});
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [error, setError] = useState("");
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    resolver: zodResolver(schema),
-  });
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [err, setErr] = useState(null);
+  const router = useRouter();
 
-  const onSubmit = async (data) => {
-    setError("");
-    try {
-      const res = await axios.post("/api/auth/login", data);
-      alert("Успешный вход!");
-    } catch (e) {
-      setError(e.response?.data?.error || "Ошибка входа");
+  const submit = async e => {
+    e.preventDefault();
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('token', data.token);
+      router.push('/protected');
+    } else {
+      setErr(data.message || 'Login failed');
     }
   };
 
   return (
-    <div>
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-     <Header/>
-     <LoginOptions/>
-     <SignUp/>
-     </div>
-     <Footer/>
+    <div style={{ padding: 16 }}>
+      <h1>Login</h1>
+      {err && <p style={{ color: 'red' }}>{err}</p>}
+      <form onSubmit={submit}>
+        <input placeholder="Email" value={form.email}
+          onChange={e => setForm({ ...form, email: e.target.value })} /><br/>
+        <input type="password" placeholder="Password" value={form.password}
+          onChange={e => setForm({ ...form, password: e.target.value })} /><br/>
+        <button type="submit">Login</button>
+      </form>
     </div>
   );
 }

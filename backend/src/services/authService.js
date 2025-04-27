@@ -1,39 +1,29 @@
-import { User } from '../models/index.js';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-export default class AuthService {
-    static async register({username, email, password}){
-        if (!username || !email || !password){
-            throw new Error('All fields are required');
-        }
-        const exists = await User.findOne({where :{email}});
-        if (exists) {
-            throw new Error('Email already registered');
-        }
-        const passwordHash = await bcrypt.hash(password,10);
-        const user = await User.create({username, email, passwordHash, role: 'user'});
-        return {id : user.id, username : user.username, email: user.email};
-    }
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { users } from "../data/users.js";
 
-    static async login({email, password}){
-        const user =await User.findOne({where: {email}});
+const JWT_SECRET = process.env.JWT_SECRET || "replace_me";
 
-        if (!user){
-            throw new Error('Invalid credentials');
-        }
-        const valid = await bcrypt.compare(password, user.passwordHash);
+export async function register({ username, email, password }) {
+  if (!username || !email || !password) {
+    throw { status: 400, message: "Все поля необходимо заполнить" };
+  }
+  if (users.find(u => u.email === email)) {
+    throw { status: 400, message: "Email занят" };
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = { id: Date.now().toString(), username, email, passwordHash };
+  users.push(user);
+  const { passwordHash: _, ...safeUser } = user;
+  return safeUser;
+}
 
-        if (!valid) {
-            throw new Error('Invalid credentials');
-        }
-
-        const token = jwt.sign(
-            { id : user.id, email: user.email, role: user.role },
-            process.env.JWT_SECRET,
-            {expiresIn : '1d'}
-        );
-        return {token};
-
-    }
-
+export async function login({ email, password }) {
+  const user = users.find(u => u.email === email);
+  if (!user) throw { status: 401, message: "Invalid credentials" };
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) throw { status: 401, message: "Invalid credentials" };
+  const payload = { id: user.id, email: user.email };
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+  return token;
 }

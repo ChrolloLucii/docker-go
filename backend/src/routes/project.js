@@ -1,16 +1,8 @@
-import {Router} from 'express';
-
-import * as projController from '../controllers/projectController.js';
-import authMiddleware from '../middlewares/authMiddleware.js';
+import { Router } from "express";
+import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = Router();
-
-router.use(authMiddleware);
-
-router.get('/', projController.getAllProjects);
-router.get('/:id', projController.getProjectById);
-router.post('/', projController.createProject);
-router.put('/:id', projController.updateProject);
-router.delete('/:id', projController.deleteProject);
-router.get('/:userId', projController.getAllProjectsPerUser);
+router.get("/", authMiddleware, (req, res) => {
+  res.json({ message: `Hello, ${req.user.email}`, projects: [] });
+});
 export default router;
