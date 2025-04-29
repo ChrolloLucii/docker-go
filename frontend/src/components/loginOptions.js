@@ -16,7 +16,7 @@ export default function LoginOptions() {
         
         {/* Email Login Link */}
         <div className="pt-2 text-center">
-          <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-[family-name:var(--font-geist-mono)]">
+          <a href="/login/email" className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-[family-name:var(--font-geist-mono)]">
             Continue with Email →
           </a>
         </div>
