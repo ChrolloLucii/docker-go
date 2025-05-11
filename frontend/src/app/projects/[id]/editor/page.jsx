@@ -4,6 +4,9 @@ import axios from "axios";
 import { use } from "react"
 import dynamic from "next/dynamic";
 import { v4 as uuidv4 } from "uuid";
+import { lintDockerfile } from "@/services/lintApi";
+import debounce from "lodash.debounce";
+import { useCallback } from "react";
   function blocksToDockerfile(blocks){
     return blocks.map(b => `${b.type} ${b.value}`.trim()).join('\n');
   }
@@ -20,6 +23,7 @@ function dockerfileToBlocks(text) {
 const DockerFileEditorVisual = dynamic(() => import("@/components/DockerFileEditorVisual"), {
 });
 export default function EditorPage({ params }) {
+  const [lintOutput, setLintOutput] = useState("");
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [content, setContent] = useState("");
@@ -84,6 +88,21 @@ const handleContentChange = (e) => {
       alert("Ошибка сохранения файла");
     }
   };
+  const runLint = useCallback(
+  debounce(async (dockerfileText) => {
+    try {
+      const result = await lintDockerfile(dockerfileText);
+      setLintOutput(result);
+    } catch (e) {
+      setLintOutput("Ошибка проверки hadolint");
+    }
+  }, 500),
+  []
+);
+useEffect(() => {
+  if (content) runLint(content);
+  else setLintOutput("");
+}, [content, runLint]);
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-black dark:to-gray-900">
       {/* Сайдбар */}
@@ -143,6 +162,11 @@ const handleContentChange = (e) => {
               value={content}
               onChange={handleContentChange}
             />
+            {lintOutput && (
+              <pre className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-red-800 text-sm whitespace-pre-wrap">
+                {lintOutput}
+              </pre>
+            )}
             <button
               onClick={handleSave}
               className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
