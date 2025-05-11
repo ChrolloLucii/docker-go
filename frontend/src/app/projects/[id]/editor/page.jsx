@@ -4,6 +4,19 @@ import axios from "axios";
 import { use } from "react"
 import dynamic from "next/dynamic";
 import { v4 as uuidv4 } from "uuid";
+  function blocksToDockerfile(blocks){
+    return blocks.map(b => `${b.type} ${b.value}`.trim()).join('\n');
+  }
+function dockerfileToBlocks(text) {
+  if (!text) return [];
+  return text
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [type, ...rest] = line.trim().split(' ');
+      return { id: uuidv4(), type, value: rest.join(' ') };
+    });
+}
 const DockerFileEditorVisual = dynamic(() => import("@/components/DockerFileEditorVisual"), {
 });
 export default function EditorPage({ params }) {
@@ -13,6 +26,28 @@ export default function EditorPage({ params }) {
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [blocks, setBlocks] = useState([]);
+  useEffect(()=>{
+    if (selectedFile) {
+      setBlocks(dockerfileToBlocks(selectedFile.content));
+      setContent(selectedFile.content);
+    }
+
+  }, [selectedFile]);
+
+const handleBlocksChange = (newBlocks) => {
+  const newContent = blocksToDockerfile(newBlocks);
+  setBlocks(newBlocks);
+  setContent(newContent);
+};
+
+const handleContentChange = (e) => {
+  const text = e.target.value;
+  const newBlocks = dockerfileToBlocks(text);
+  setContent(text);
+  setBlocks(newBlocks);
+};
+  
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -49,7 +84,6 @@ export default function EditorPage({ params }) {
       alert("Ошибка сохранения файла");
     }
   };
-
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-black dark:to-gray-900">
       {/* Сайдбар */}
@@ -95,16 +129,19 @@ export default function EditorPage({ params }) {
 
       {/* Главная область */}
       <main className="flex-1 p-6">
-      {isClient && <DockerFileEditorVisual />}
-        {selectedFile ? (
+        {selectedFile && (
           <>
             <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
               {selectedFile.name}
             </h1>
+            <DockerFileEditorVisual
+              stages={[{ id: "stage-1", name: "Stage 1", instructions: blocks }]}
+              onChange={stages => handleBlocksChange(stages[0].instructions)}
+            />
             <textarea
               className="w-full h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-950 text-gray-900 dark:text-white"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
             />
             <button
               onClick={handleSave}
@@ -113,7 +150,8 @@ export default function EditorPage({ params }) {
               Сохранить
             </button>
           </>
-        ) : (
+        )}
+        {!selectedFile && (
           <div className="text-gray-500 text-center mt-20">
             Выберите файл для редактирования
           </div>

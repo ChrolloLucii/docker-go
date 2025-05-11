@@ -3,34 +3,14 @@ import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } 
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useEffect } from "react";
-
-const DEFAULT_STAGES = [
-    {
-      id: "stage-1",
-      name: "Stage 1",
-      instructions: [
-        { id: "1", type: "FROM", value: "node:18-alpine as builder" },
-        { id: "2", type: "WORKDIR", value: "/app" },
-        { id: "3", type: "COPY", value: "." },
-      ],
-    },
-  ];
 
 const DOCKER_INSTRUCTIONS = [
   "FROM", "WORKDIR", "COPY", "RUN", "CMD", "ENV", "EXPOSE", "ENTRYPOINT", "ARG", "USER", "VOLUME", "LABEL"
 ];
 
-// Drag handle SVG
 function DragHandle(props) {
   return (
-    <span
-      {...props}
-      className="cursor-grab px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-      tabIndex={-1}
-      aria-label="Перетащить"
-      style={{ display: "flex", alignItems: "center" }}
-    >
+    <span {...props} className="cursor-grab px-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" tabIndex={-1} aria-label="Перетащить" style={{ display: "flex", alignItems: "center" }}>
       <svg width="18" height="18" fill="none" viewBox="0 0 18 18">
         <circle cx="5" cy="5" r="1.5" fill="currentColor"/>
         <circle cx="5" cy="9" r="1.5" fill="currentColor"/>
@@ -56,10 +36,9 @@ function SortableItem({ id, children }) {
   );
 }
 
-export default function DockerFileEditorVisual({ stages: initialStages, onChange }) {
-  const [stages, setStages] = useState(initialStages || DEFAULT_STAGES);
+export default function DockerFileEditorVisual({ stages, onChange }) {
+  // Управляем только активным этапом локально (если нужно)
   const [activeStage, setActiveStage] = useState(stages[0].id);
-
   const currentStage = stages.find(s => s.id === activeStage);
 
   // Drag & Drop reorder
@@ -74,12 +53,10 @@ export default function DockerFileEditorVisual({ stages: initialStages, onChange
   };
 
   function updateStageInstructions(stageId, newInstructions) {
-    setStages(stages =>
-      stages.map(s =>
-        s.id === stageId ? { ...s, instructions: newInstructions } : s
-      )
+    const newStages = stages.map(s =>
+      s.id === stageId ? { ...s, instructions: newInstructions } : s
     );
-    onChange?.(stages);
+    onChange?.(newStages);
   }
 
   function handleAddInstruction() {
@@ -90,15 +67,7 @@ export default function DockerFileEditorVisual({ stages: initialStages, onChange
     };
     updateStageInstructions(activeStage, [...currentStage.instructions, newInstruction]);
   }
-  function handleAddStage() {
-    const newStage = {
-      id: `stage-${uuidv4()}`,
-      name: `Stage ${stages.length + 1}`,
-      instructions: [],
-    };
-    setStages([...stages, newStage]);
-    setActiveStage(newStage.id);
-  }
+
   function handleInstructionChange(idx, field, value) {
     const newInstructions = currentStage.instructions.map((ins, i) =>
       i === idx ? { ...ins, [field]: value } : ins
@@ -119,20 +88,6 @@ export default function DockerFileEditorVisual({ stages: initialStages, onChange
             {stage.name}
           </button>
         ))}
-        <button
-          className="ml-2 px-3 py-1 rounded bg-green-600 text-white"
-          onClick={() => {
-            const newStage = {
-                id: `stage-${uuidv4()}`,
-                name: `Stage ${stages.length + 1}`,
-                instructions: [],
-              };
-              setStages([...stages, newStage]);
-              setActiveStage(newStage.id);
-          }}
-        >
-          + Этап
-        </button>
       </div>
 
       {/* Drag & Drop Instructions */}
