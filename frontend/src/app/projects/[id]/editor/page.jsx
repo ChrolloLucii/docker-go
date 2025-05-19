@@ -77,17 +77,24 @@ const handleContentChange = (e) => {
     setContent(file.content);
   };
 
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(`/api/projects/${projectId}/files/${selectedFile.id}`, { content }, {
+ const handleSave = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.put(
+      `/api/projects/${projectId}/files/${selectedFile.id}`,
+      {
+        ...selectedFile, // отправляем все поля, а не только content!
+        content,
+      },
+      {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Файл сохранён!");
-    } catch (err) {
-      alert("Ошибка сохранения файла");
-    }
-  };
+      }
+    );
+    alert("Файл сохранён!");
+  } catch (err) {
+    alert("Ошибка сохранения файла");
+  }
+};
   const runLint = useCallback(
   debounce(async (dockerfileText) => {
     try {
@@ -126,22 +133,95 @@ useEffect(() => {
         {sidebarOpen && (
           <>
             <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Файлы проекта</h2>
-            <ul className="space-y-2">
-              {files.map(file => (
-                <li key={file.id}>
-                  <button
-                    className={`block w-full text-left px-3 py-2 rounded-lg ${
-                      selectedFile?.id === file.id
-                        ? "bg-black text-white"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
-                    }`}
-                    onClick={() => handleFileSelect(file)}
-                  >
-                    {file.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <form
+  onSubmit={async (e) => {
+    e.preventDefault();
+    const name = prompt("Имя нового файла (например, Dockerfile):");
+    if (!name) return;
+    const token = localStorage.getItem("token");
+    try {
+      const res = await axios.post(
+        `/api/projects/${projectId}/files`,
+        { name, content: "" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFiles((prev) => [...prev, res.data]);
+    } catch (err) {
+      alert("Ошибка создания файла");
+    }
+  }}
+>
+  <button
+    type="submit"
+    className="mb-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 w-full"
+  >
+    + Новый файл
+  </button>
+</form>
+    <ul className="space-y-2">
+  {files.map(file => (
+    <li key={file.id} className="flex items-center">
+      <button
+        className={`flex-1 text-left px-3 py-2 rounded-lg ${
+          selectedFile?.id === file.id
+            ? "bg-black text-white"
+            : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
+        }`}
+        onClick={() => handleFileSelect(file)}
+      >
+        {file.name}
+      </button>
+      {/* Кнопка переименования */}
+      <button
+        className="ml-2 text-blue-500 hover:text-blue-700"
+        title="Переименовать файл"
+        onClick={async (e) => {
+          e.stopPropagation();
+          const newName = prompt("Новое имя файла:", file.name);
+          if (!newName || newName === file.name) return;
+          const token = localStorage.getItem("token");
+          try {
+            await axios.put(
+              `/api/projects/${projectId}/files/${file.id}`,
+              { ...file, name: newName },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setFiles((prev) =>
+              prev.map(f => f.id === file.id ? { ...f, name: newName } : f)
+            );
+            if (selectedFile?.id === file.id) setSelectedFile({ ...file, name: newName });
+          } catch {
+            alert("Ошибка переименования файла");
+          }
+        }}
+      >
+        ✎
+      </button>
+      {/* Кнопка удаления */}
+      <button
+        className="ml-2 text-red-500 hover:text-red-700"
+        title="Удалить файл"
+        onClick={async (e) => {
+          e.stopPropagation();
+          if (!window.confirm("Удалить файл?")) return;
+          const token = localStorage.getItem("token");
+          try {
+            await axios.delete(
+              `/api/projects/${projectId}/files/${file.id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setFiles((prev) => prev.filter(f => f.id !== file.id));
+            if (selectedFile?.id === file.id) setSelectedFile(null);
+          } catch {
+            alert("Ошибка удаления файла");
+          }
+        }}
+      >
+        ✕
+      </button>
+    </li>
+  ))}
+</ul>
           </>
         )}
       </aside>
@@ -157,11 +237,27 @@ useEffect(() => {
               stages={[{ id: "stage-1", name: "Stage 1", instructions: blocks }]}
               onChange={stages => handleBlocksChange(stages[0].instructions)}
             />
-            <textarea
-              className="w-full h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-950 text-gray-900 dark:text-white"
-              value={content}
-              onChange={handleContentChange}
-            />
+           <div className="flex bg-white dark:bg-gray-950 rounded-lg border p-2 relative">
+  {/* Нумерация строк */}
+  <div
+    className="text-right select-none pr-2 text-gray-400"
+    style={{ minWidth: 32, userSelect: "none" }}
+    aria-hidden
+  >
+    {content.split('\n').map((_, i) => (
+      <div key={i} style={{ height: 24, lineHeight: "24px" }}>{i + 1}</div>
+    ))}
+  </div>
+  {/* Текстовый редактор */}
+  <textarea
+    className="flex-1 bg-transparent outline-none resize-none"
+    style={{ minHeight: 200, fontFamily: "monospace", lineHeight: "24px" }}
+    value={content}
+    onChange={handleContentChange}
+    spellCheck={false}
+    rows={content.split('\n').length || 1}
+  />
+</div>
             {lintOutput && (
               <pre className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-red-800 text-sm whitespace-pre-wrap">
                 {lintOutput}

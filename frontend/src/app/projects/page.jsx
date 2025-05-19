@@ -32,7 +32,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 dark:from-black dark:to-gray-900">
+    <div className="min-h-screen dark:bg-black bg-white">
       <div className="max-w-3xl mx-auto py-16 px-4">
         <div className="flex items-center justify-between mb-10">
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">

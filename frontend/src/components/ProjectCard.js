@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function ProjectCard({ project }) {
   return (
-    <li className="group relative border border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-gray-950 shadow-sm hover:shadow-xl transition-all duration-200 p-6 flex flex-col justify-between overflow-hidden">
+    <li className="group relative border border-gray-100 dark:border-gray-800 rounded-2xl bg-white dark:bg-black shadow-sm hover:shadow-xl transition-all duration-200 p-6 flex flex-col justify-between overflow-hidden">
       {/* SVG круг и логомарка */}
       <div className="absolute right-6 top-6 opacity-10 group-hover:opacity-20 transition">
         <svg width="48" height="48" viewBox="0 0 180 180" fill="none">

@@ -31,21 +31,21 @@ export default function NewProjectForm({ onCreated }) {
   return (
     <form onSubmit={handleCreate} className="mb-6">
       <input
-        className="border rounded px-3 py-2 mr-2"
+        className="border rounded px-3 py-2 mr-2 dark:text-gray-100 text-gray-700 "
         placeholder="Название проекта"
         value={name}
         onChange={e => setName(e.target.value)}
         required
       />
       <input
-        className="border rounded px-3 py-2 mr-2"
+        className="border rounded px-3 py-2 mr-2 dark:text-gray-100 text-gray-700"
         placeholder="Описание (необязательно)"
         value={description}
         onChange={e => setDescription(e.target.value)}
       />
       <button
         type="submit"
-        className="bg-black text-white px-4 py-2 rounded"
+        className="bg-black dark:bg-white dark:text-black text-white px-4 py-2 rounded"
         disabled={loading}
       >
         {loading ? "Создание..." : "Создать"}
