@@ -221,7 +221,7 @@ useEffect(() => {
             />
             <button
               type="submit"
-              className="bg-blue-600 text-white px-3 py-1 my-4 rounded"
+              className="dark:bg-white dark:text-black bg-black text-white px-3 py-1 my-4 rounded"
             >
               Пригласить
             </button>

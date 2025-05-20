@@ -86,7 +86,7 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
         {stages.map(stage => (
           <button
             key={stage.id}
-            className={`px-3 py-1 rounded ${stage.id === activeStage ? "bg-black text-white" : "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200"}`}
+            className={`px-3 py-1 rounded ${stage.id === activeStage ? "bg-black text-white" : "bg-gray-200 dark:bg-white text-black dark:text-black"}`}
             onClick={() => setActiveStage(stage.id)}
           >
             {stage.name}
@@ -105,20 +105,20 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
   {(dragListeners) => (
     <div
       key={ins.id}
-      className="flex items-center gap-2 mb-2 p-2 rounded border bg-gray-50 dark:bg-gray-900 relative"
+      className="flex items-center gap-2 mb-2 p-2 rounded border bg-gray-50 dark:bg-black relative"
       onClick={() => setActiveInstruction(ins.id)}
       style={{ borderColor: activeInstruction === ins.id ? "#2563eb" : undefined }}
     >
       <DragHandle {...dragListeners} />
       <select
-        className="border rounded px-2 py-1"
-        value={ins.type}
-        onChange={e => handleInstructionChange(idx, "type", e.target.value)}
-      >
-        {DOCKER_INSTRUCTIONS.map(opt => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </select>
+  className="border rounded px-2 py-1 bg-white text-black dark:bg-gray-950 dark:text-white"
+  value={ins.type}
+  onChange={e => handleInstructionChange(idx, "type", e.target.value)}
+>
+  {DOCKER_INSTRUCTIONS.map(opt => (
+    <option key={opt} value={opt}>{opt}</option>
+  ))}
+</select>
       <input
         className="flex-1 border rounded px-2 py-1"
         value={ins.value}
