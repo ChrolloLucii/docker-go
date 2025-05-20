@@ -370,6 +370,49 @@ useEffect(() => {
           >
             Сохранить
           </button>
+          <button
+  className="ml-2 px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300"
+  onClick={() => {
+    if (!selectedFile) return;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    // Имя файла: если есть расширение — оставить, иначе добавить .dockerfile
+    let fileName = selectedFile.name;
+    if (!/\.(dockerfile|Dockerfile)$/i.test(fileName)) {
+      fileName += ".dockerfile";
+    }
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }}
+>
+  Экспорт Dockerfile
+</button>
+   <label
+  htmlFor="import-dockerfile"
+  className="ml-2 px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 cursor-pointer inline-block"
+>
+  Импорт Dockerfile
+</label>
+<input
+  type="file"
+  accept=".dockerfile,Dockerfile"
+  style={{ display: "none" }}
+  id="import-dockerfile"
+  onChange={async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!/\.dockerfile$/i.test(file.name) && file.name !== "Dockerfile") {
+      alert("Можно импортировать только файлы с расширением .dockerfile или файл с именем Dockerfile");
+      return;
+    }
+    const text = await file.text();
+    setContent(text);
+    setStages(dockerfileToStages(text));
+  }}
+/>
         </div>
         <div className="flex-1 min-w-[350px] max-w-[600px]">
           <DockerFileEditorVisual
@@ -377,6 +420,7 @@ useEffect(() => {
             onChange={handleStagesChange}
           />
         </div>
+
       </div>
     </>
   )}
