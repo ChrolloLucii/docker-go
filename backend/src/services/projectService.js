@@ -1,9 +1,23 @@
 import db from '../models/index.js';
-const { Project } = db;
+const { Project, ProjectMember } = db;
 export const projectService = {
-    async getAllPerUser(ownerId) {
-      return await Project.findAll({ where: { ownerId } });
-    },
+async getAllPerUser(userId) {
+  return await Project.findAll({
+    where: {},
+    include: [
+      {
+        model: ProjectMember,
+        as: 'projectMembers', // <-- исправлено!
+        where: { userId },
+        required: false
+      }
+    ],
+  }).then(projects =>
+    projects.filter(
+      p => p.ownerId === userId || (p.projectMembers && p.projectMembers.length > 0)
+    )
+  );
+},
   
     async getById(id, ownerId) {
       const project = await Project.findOne({ where: { id, ownerId } });

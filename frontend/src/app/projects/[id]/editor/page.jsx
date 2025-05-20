@@ -60,6 +60,9 @@ function stagesToDockerfile(stages) {
 const DockerFileEditorVisual = dynamic(() => import("@/components/DockerFileEditorVisual"), {
 });
 export default function EditorPage({ params }) {
+  const [inviteUsername, setInviteUsername] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
   const [lintOutput, setLintOutput] = useState("");
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -121,6 +124,22 @@ const handleContentChange = (e) => {
       .then(res => setFiles(res.data))
       .catch(err => setError(err.response?.data?.error || "Ошибка загрузки файлов"));
   }, [projectId]);
+  const handleInvite = async (e) => {
+  e.preventDefault();
+  setInviteError(""); setInviteSuccess("");
+  const token = localStorage.getItem("token");
+  try {
+    await axios.post(
+      `/api/projects/${projectId}/members/by-username`,
+      { username: inviteUsername, role: "editor" },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setInviteSuccess("Пользователь добавлен!");
+    setInviteUsername("");
+  } catch (err) {
+    setInviteError(err.response?.data?.error || "Ошибка приглашения");
+  }
+};
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
@@ -191,6 +210,24 @@ useEffect(() => {
         </button>
         {sidebarOpen && (
           <>
+            <form onSubmit={handleInvite} className="mb-4 items-center">
+            <input
+              type="text"
+              placeholder="Ник пользователя"
+              value={inviteUsername}
+              onChange={e => setInviteUsername(e.target.value)}
+              className="border rounded px-2 py-1 flex-1"
+              required
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-3 py-1 my-4 rounded"
+            >
+              Пригласить
+            </button>
+          </form>
+{inviteError && <div className="text-red-500 mb-2">{inviteError}</div>}
+{inviteSuccess && <div className="text-green-600 mb-2">{inviteSuccess}</div>}
             <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Файлы проекта</h2>
             <form
   onSubmit={async (e) => {

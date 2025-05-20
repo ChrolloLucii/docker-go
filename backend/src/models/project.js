@@ -17,6 +17,10 @@ export default (sequelize) => {
           as: 'members'
         });
         Project.hasMany(models.DockerFile, { foreignKey: 'projectId', as: 'dockerFiles' });
+        Project.hasMany(models.ProjectMember, {
+  foreignKey: 'projectId',
+  as: 'projectMembers' // <-- для записей ProjectMember
+});
     }
   }
   Project.init({

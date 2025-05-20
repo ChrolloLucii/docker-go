@@ -1,32 +1,38 @@
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  class ProjectMember extends Model {
+  class Template extends Model {
     static associate(models) {
-      ProjectMember.belongsTo(models.Project, { foreignKey: 'projectId' });
-      ProjectMember.belongsTo(models.User, { foreignKey: 'userId' });
+      Template.belongsTo(models.User, { foreignKey: 'authorId', as: 'author' });
     }
   }
-
-  ProjectMember.init({
+  Template.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       allowNull: false,
     },
-    projectId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    role: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'editor',
+    },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    authorId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    rating: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
     },
     createdAt: {
       type: DataTypes.DATE,
@@ -40,11 +46,11 @@ export default (sequelize) => {
     },
   }, {
     sequelize,
-    modelName: 'ProjectMember',
-    tableName: 'project_members',
+    modelName: 'Template',
+    tableName: 'templates',
     underscored: true,
     timestamps: true,
   });
 
-  return ProjectMember;
+  return Template;
 };

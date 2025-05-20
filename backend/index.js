@@ -8,6 +8,7 @@ import fileRoutes from './src/routes/file.js';
 import lintRoutes from './src/routes/lint.js';
 import adminRoutes from './src/routes/admin.js';
 import templatesRoutes from './src/routes/templates.js';
+import projectMemberRoutes from './src/routes/projectMember.js';
 dotenv.config();
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/projects/:projectId/files', fileRoutes);
 app.use('/api/lint', lintRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/projects/:projectId/members', projectMemberRoutes);
 app.use(errorMiddleware);
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
