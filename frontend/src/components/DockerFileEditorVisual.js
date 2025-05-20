@@ -3,10 +3,13 @@ import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } 
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import InspectorPanel from "@/components/InspectorPanel";
 
 const DOCKER_INSTRUCTIONS = [
   "FROM", "WORKDIR", "COPY", "RUN", "CMD", "ENV", "EXPOSE", "ENTRYPOINT", "ARG", "USER", "VOLUME", "LABEL"
 ];
+
+
 
 function DragHandle(props) {
   return (
@@ -37,6 +40,7 @@ function SortableItem({ id, children }) {
 }
 
 export default function DockerFileEditorVisual({ stages, onChange }) {
+  const [activeInstruction, setActiveInstruction] = useState(null);
   // Управляем только активным этапом локально (если нужно)
   const [activeStage, setActiveStage] = useState(stages[0].id);
   const currentStage = stages.find(s => s.id === activeStage);
@@ -98,38 +102,45 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
         >
           {currentStage.instructions.map((ins, idx) => (
             <SortableItem key={ins.id} id={ins.id}>
-              {(dragListeners) => (
-                <div
-                  key={ins.id}
-                  className="flex items-center gap-2 mb-2 p-2 rounded border bg-gray-50 dark:bg-gray-900"
-                >
-                  <DragHandle {...dragListeners} />
-                  <select
-                    className="border rounded px-2 py-1"
-                    value={ins.type}
-                    onChange={e => handleInstructionChange(idx, "type", e.target.value)}
-                  >
-                    {DOCKER_INSTRUCTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                  <input
-                    className="flex-1 border rounded px-2 py-1"
-                    value={ins.value}
-                    onChange={e => handleInstructionChange(idx, "value", e.target.value)}
-                    placeholder="Параметры инструкции"
-                  />
-                  <button
-                    className="text-red-500 px-2"
-                    onClick={() => {
-                      const newInstructions = currentStage.instructions.filter((_, i) => i !== idx);
-                      updateStageInstructions(activeStage, newInstructions);
-                    }}
-                    title="Удалить"
-                  >✕</button>
-                </div>
-              )}
-            </SortableItem>
+  {(dragListeners) => (
+    <div
+      key={ins.id}
+      className="flex items-center gap-2 mb-2 p-2 rounded border bg-gray-50 dark:bg-gray-900 relative"
+      onClick={() => setActiveInstruction(ins.id)}
+      style={{ borderColor: activeInstruction === ins.id ? "#2563eb" : undefined }}
+    >
+      <DragHandle {...dragListeners} />
+      <select
+        className="border rounded px-2 py-1"
+        value={ins.type}
+        onChange={e => handleInstructionChange(idx, "type", e.target.value)}
+      >
+        {DOCKER_INSTRUCTIONS.map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+      <input
+        className="flex-1 border rounded px-2 py-1"
+        value={ins.value}
+        onChange={e => handleInstructionChange(idx, "value", e.target.value)}
+        placeholder="Параметры инструкции"
+      />
+      <button
+        className="text-red-500 px-2"
+        onClick={e => {
+          e.stopPropagation();
+          const newInstructions = currentStage.instructions.filter((_, i) => i !== idx);
+          updateStageInstructions(activeStage, newInstructions);
+        }}
+        title="Удалить"
+      >✕</button>
+      {/* Инспектор свойств */}
+      {activeInstruction === ins.id && (
+        <InspectorPanel instruction={ins} />
+      )}
+    </div>
+  )}
+</SortableItem>
           ))}
         </SortableContext>
       </DndContext>

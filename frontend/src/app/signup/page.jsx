@@ -1,7 +1,8 @@
 'use client';
 import { useState } from "react";
 import axios from "axios";
-
+import HeaderSignUp from "@/components/headerSignUp";
+import Footer from "@/components/footer";
 export default function SignUpPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -23,6 +24,8 @@ export default function SignUpPage() {
   };
 
   return (
+    <div>
+      <HeaderSignUp />
     <div className="min-h-screen flex flex-col items-center justify-center bg-black">
       <form
         onSubmit={handleSubmit}
@@ -62,7 +65,9 @@ export default function SignUpPage() {
         {error && <div className="text-red-500 text-center">{error}</div>}
         {success && <div className="text-green-500 text-center">{success}</div>}
       </form>
-      <a href="/login" className="mt-4 text-gray-300 hover:underline">Уже есть аккаунт? Войти</a>
+      <a href="/login" className="mt-4 text-blue-600 dark:text-blue-400 hover:underline text-sm font-[family-name:var(--font-geist-mono)]">Уже есть аккаунт? Войти</a>
     </div>
+    <Footer />
+</div>
   );
 }

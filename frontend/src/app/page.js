@@ -1,19 +1,11 @@
 "use client";
-
+import HeaderSignUp from "@/components/headerSignUp";
 export default function Home() {
   return (
+    <div>
+      <HeaderSignUp/>
     <div className="min-h-screen flex flex-col items-center justify-center dark:bg-black bg-white ">
-      <header className="w-full flex justify-between items-center px-8 py-6">
-        <span className="text-black text-2xl font-bold tracking-tight animate-fadein dark:text-white">DockerGo</span>
-        <a
-          href="https://github.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="dark:text-gray-300 text-black hover:text-white transition-colors duration-200"
-        >
-          GitHub
-        </a>
-      </header>
+      
       <main className="flex-1 flex flex-col items-center justify-center w-full px-4">
         <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl shadow-xl p-10 max-w-xl w-full flex flex-col items-center gap-6 glass animate-pop">
           <h1 className="text-4xl font-extrabold dark:text-white text-black text-center mb-2 tracking-tight">
@@ -58,6 +50,7 @@ export default function Home() {
           100% { opacity: 1; transform: scale(1);}
         }
       `}</style>
+    </div>
     </div>
   );
 }

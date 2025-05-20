@@ -20,6 +20,43 @@ function dockerfileToBlocks(text) {
       return { id: uuidv4(), type, value: rest.join(' ') };
     });
 }
+function dockerfileToStages(text) {
+  if (!text) return [{ id: "stage-1", name: "Stage 1", instructions: [] }];
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const stages = [];
+  const safeStages = Array.isArray(stages) && stages.length
+  ? stages
+  : [{ id: "stage-1", name: "Stage 1", instructions: [] }];
+  let current = null;
+  lines.forEach(line => {
+    const [type, ...rest] = line.split(' ');
+    if (type === "FROM") {
+      if (current) stages.push(current);
+      current = {
+        id: `stage-${stages.length + 1}`,
+        name: `Stage ${stages.length + 1}`,
+        instructions: []
+      };
+    }
+    if (current) {
+      current.instructions.push({
+        id: uuidv4(),
+        type,
+        value: rest.join(' ')
+      });
+    }
+  });
+  if (current) stages.push(current);
+  return stages.length ? stages : [{ id: "stage-1", name: "Stage 1", instructions: [] }];
+}
+
+function stagesToDockerfile(stages) {
+  return stages
+    .map(stage =>
+      stage.instructions.map(ins => `${ins.type} ${ins.value}`.trim()).join('\n')
+    )
+    .join('\n');
+}
 const DockerFileEditorVisual = dynamic(() => import("@/components/DockerFileEditorVisual"), {
 });
 export default function EditorPage({ params }) {
@@ -31,13 +68,27 @@ export default function EditorPage({ params }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [blocks, setBlocks] = useState([]);
-  useEffect(()=>{
-    if (selectedFile) {
-      setBlocks(dockerfileToBlocks(selectedFile.content));
-      setContent(selectedFile.content);
-    }
+  const [stages, setStages] = useState([
+  { id: "stage-1", name: "Stage 1", instructions: [] }
+]);
+ const safeStages = Array.isArray(stages) && stages.length
+  ? stages
+  : [{ id: "stage-1", name: "Stage 1", instructions: [] }];
 
-  }, [selectedFile]);
+const [activeStage, setActiveStage] = useState(safeStages[0].id);
+useEffect(() => {
+  if (!safeStages.find(s => s.id === activeStage)) {
+    setActiveStage(safeStages[0].id);
+  }
+}, [safeStages, activeStage]);
+const currentStage = safeStages.find(s => s.id === activeStage) || safeStages[0];
+  useEffect(() => {
+  if (selectedFile) {
+    const parsedStages = dockerfileToStages(selectedFile.content);
+    setStages(parsedStages);
+    setContent(selectedFile.content);
+  }
+}, [selectedFile]);
 
 const handleBlocksChange = (newBlocks) => {
   const newContent = blocksToDockerfile(newBlocks);
@@ -47,9 +98,8 @@ const handleBlocksChange = (newBlocks) => {
 
 const handleContentChange = (e) => {
   const text = e.target.value;
-  const newBlocks = dockerfileToBlocks(text);
   setContent(text);
-  setBlocks(newBlocks);
+  setStages(dockerfileToStages(text));
 };
   
   useEffect(() => {
@@ -76,6 +126,15 @@ const handleContentChange = (e) => {
     setSelectedFile(file);
     setContent(file.content);
   };
+  const handleStagesChange = (newStages) => {
+  if (!newStages.length) {
+    setStages([{ id: "stage-1", name: "Stage 1", instructions: [] }]);
+    setContent("");
+    return;
+  }
+  setStages(newStages);
+  setContent(stagesToDockerfile(newStages));
+};
 
  const handleSave = async () => {
   try {
@@ -83,7 +142,7 @@ const handleContentChange = (e) => {
     await axios.put(
       `/api/projects/${projectId}/files/${selectedFile.id}`,
       {
-        ...selectedFile, // отправляем все поля, а не только content!
+        ...selectedFile,
         content,
       },
       {
@@ -211,7 +270,11 @@ useEffect(() => {
               { headers: { Authorization: `Bearer ${token}` } }
             );
             setFiles((prev) => prev.filter(f => f.id !== file.id));
-            if (selectedFile?.id === file.id) setSelectedFile(null);
+                    if (selectedFile?.id === file.id) {
+            setSelectedFile(null);
+            setStages([{ id: "stage-1", name: "Stage 1", instructions: [] }]);
+            setContent("");
+          }
           } catch {
             alert("Ошибка удаления файла");
           }
@@ -228,55 +291,64 @@ useEffect(() => {
 
       {/* Главная область */}
       <main className="flex-1 p-6">
-        {selectedFile && (
-          <>
-            <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-              {selectedFile.name}
-            </h1>
-            <DockerFileEditorVisual
-              stages={[{ id: "stage-1", name: "Stage 1", instructions: blocks }]}
-              onChange={stages => handleBlocksChange(stages[0].instructions)}
-            />
-           <div className="flex bg-white dark:bg-gray-950 rounded-lg border p-2 relative">
-  {/* Нумерация строк */}
-  <div
-    className="text-right select-none pr-2 text-gray-400"
-    style={{ minWidth: 32, userSelect: "none" }}
-    aria-hidden
-  >
-    {content.split('\n').map((_, i) => (
-      <div key={i} style={{ height: 24, lineHeight: "24px" }}>{i + 1}</div>
-    ))}
-  </div>
-  {/* Текстовый редактор */}
-  <textarea
-    className="flex-1 bg-transparent outline-none resize-none"
-    style={{ minHeight: 200, fontFamily: "monospace", lineHeight: "24px" }}
-    value={content}
-    onChange={handleContentChange}
-    spellCheck={false}
-    rows={content.split('\n').length || 1}
-  />
-</div>
-            {lintOutput && (
-              <pre className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-red-800 text-sm whitespace-pre-wrap">
-                {lintOutput}
-              </pre>
-            )}
-            <button
-              onClick={handleSave}
-              className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+  {selectedFile && (
+    <>
+      <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+        {selectedFile.name}
+      </h1>
+      <div className="flex flex-row gap-12 items-start"> {/* Добавлен flex-контейнер и gap */}
+        {/* Визуальный редактор */}
+        
+        {/* Текстовый редактор */}
+        <div className="flex-1 min-w-[350px] max-w-[700px]">
+          <div className="flex bg-white dark:bg-gray-950 rounded-lg border p-2 relative">
+            {/* Нумерация строк */}
+            <div
+              className="text-right select-none pr-2 text-gray-400"
+              style={{ minWidth: 32, userSelect: "none" }}
+              aria-hidden
             >
-              Сохранить
-            </button>
-          </>
-        )}
-        {!selectedFile && (
-          <div className="text-gray-500 text-center mt-20">
-            Выберите файл для редактирования
+              {content.split('\n').map((_, i) => (
+                <div key={i} style={{ height: 24, lineHeight: "24px" }}>{i + 1}</div>
+              ))}
+            </div>
+            {/* Текстовый редактор */}
+            <textarea
+              className="flex-1 bg-transparent outline-none resize-none"
+              style={{ minHeight: 200, fontFamily: "monospace", lineHeight: "24px" }}
+              value={content}
+              onChange={handleContentChange}
+              spellCheck={false}
+              rows={content.split('\n').length || 1}
+            />
           </div>
-        )}
-      </main>
+          {lintOutput && (
+            <pre className="mt-2 p-2 bg-red-50 border border-red-300 rounded text-red-800 text-sm whitespace-pre-wrap">
+              {lintOutput}
+            </pre>
+          )}
+          <button
+            onClick={handleSave}
+            className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Сохранить
+          </button>
+        </div>
+        <div className="flex-1 min-w-[350px] max-w-[600px]">
+          <DockerFileEditorVisual
+            stages={stages}
+            onChange={handleStagesChange}
+          />
+        </div>
+      </div>
+    </>
+  )}
+  {!selectedFile && (
+    <div className="text-gray-500 text-center mt-20">
+      Выберите файл для редактирования
+    </div>
+  )}
+</main>
     </div>
   );
 }
