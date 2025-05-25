@@ -9,6 +9,10 @@ import lintRoutes from './src/routes/lint.js';
 import adminRoutes from './src/routes/admin.js';
 import templatesRoutes from './src/routes/templates.js';
 import projectMemberRoutes from './src/routes/projectMember.js';
+import http from 'http';
+import {Server} from 'socket.io';
+import InviteObserver from "./src/observers/inviteObserver.js";
+
 dotenv.config();
 
 const app = express();
@@ -23,7 +27,6 @@ app.use(cors(
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
-
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK" });
 });
@@ -36,6 +39,32 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/projects/:projectId/members', projectMemberRoutes);
 app.use(errorMiddleware);
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {origin: '*'}
+});
+io.on('connection', (socket) => {
+  socket.on('joinfile', (fileId) => {
+    socket.join(fileId);
+  });
+  socket.on('leavefile', (fileId) => {
+    socket.leave(fileId);
+  });
+  socket.on('fileEdit', ({ fileId, content, userId }) => {
+    socket.to(fileId).emit('fileEdited', { fileId, content, userId });
+  });
+  socket.on('disconnect', () => {});
+  socket.on('registerUser', (userId) => {
+  socket.join(`user_${userId}`);
+});
+});
+const inviteObserver = new InviteObserver(io);
+app.set('inviteObserver', inviteObserver);
+export {io};
+
+server.listen(PORT, () => {
+  console.log(`🚀 Socket.io listening on http://localhost:${PORT}`);
+});
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
 });

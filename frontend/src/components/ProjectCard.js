@@ -1,8 +1,26 @@
 import Link from "next/link";
-
-export default function ProjectCard({ project }) {
+import { FaTrash } from "react-icons/fa";
+const handleDelete = async () => {
+  if (confirm('Удалить проект? Это действие необратимо.')) {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Ошибка удаления проекта');
+      }
+      if (onDelete) onDelete(project.id);
+    } catch (e) {
+      alert(e.message || 'Ошибка удаления проекта');
+    }
+  }
+};
+export default function ProjectCard({ project, onDelete }) {
   return (
-    <li className="group relative border border-gray-100 dark:border-gray-800 rounded-2xl bg-white dark:bg-black shadow-sm hover:shadow-xl transition-all duration-200 p-6 flex flex-col justify-between overflow-hidden">
+    <li className="group relative border dark:backdrop-blur-md bg-white/5 border-white/10 rounded-2xl shadow-xl hover:shadow-xl transition-all duration-200 p-6 flex flex-col justify-between overflow-hidden">
       {/* SVG круг и логомарка */}
       <div className="absolute right-6 top-6 opacity-10 group-hover:opacity-20 transition">
         <svg width="48" height="48" viewBox="0 0 180 180" fill="none">
@@ -21,15 +39,25 @@ export default function ProjectCard({ project }) {
           {project.description || <span className="italic text-gray-400">Нет описания</span>}
         </div>
       </div>
-      <Link
-        href={`/projects/${project.id}/editor`}
-        className="inline-flex items-center gap-1 text-sm font-medium text-black dark:text-white hover:underline mt-2"
-      >
-        <svg width="16" height="16" fill="none" className="mr-1" viewBox="0 0 16 16">
-          <path d="M4 8h8M8 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-        Открыть редактор
-      </Link>
+     <div className="flex gap-2 mt-2 items-center">
+  <Link
+    href={`/projects/${project.id}/editor`}
+    className="inline-flex items-center gap-1 text-sm font-medium text-black dark:text-white hover:underline"
+  >
+    <svg width="16" height="16" fill="none" className="mr-1" viewBox="0 0 16 16">
+      <path d="M4 8h8M8 4v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+    Открыть редактор
+  </Link>
+  <button
+    onClick={handleDelete}
+    className="inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:underline px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+    title="Удалить проект"
+  >
+    <FaTrash className="text-red-500" />
+    <span className="sr-only">Удалить</span>
+  </button>
+</div>
     </li>
   );
 }

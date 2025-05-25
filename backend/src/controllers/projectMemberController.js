@@ -40,5 +40,10 @@ export async function addProjectMemberByUsername(req, res) {
     userId: user.id,
     role: role || 'editor'
   });
+  req.app.get('inviteObserver').notifyInvite({
+  invitedUserId: user.id, // или member.userId
+  projectId,
+  inviter: req.user, // или нужные данные о пригласившем
+});
   res.status(201).json(member);
 }

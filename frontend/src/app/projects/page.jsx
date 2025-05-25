@@ -25,8 +25,6 @@ export default function ProjectsPage() {
         }
       });
   }, []);
-
-  // Добавляем новый проект в начало списка
   const handleProjectCreated = (project) => {
     setProjects(prev => [project, ...prev]);
   };
@@ -39,7 +37,6 @@ export default function ProjectsPage() {
             Мои проекты
           </h1>
         </div>
-        {/* Форма создания нового проекта */}
         <NewProjectForm onCreated={handleProjectCreated} />
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">

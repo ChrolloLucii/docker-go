@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import InspectorPanel from "@/components/InspectorPanel";
-
+import { FaTrash } from "react-icons/fa";
 const DOCKER_INSTRUCTIONS = [
   "FROM", "WORKDIR", "COPY", "RUN", "CMD", "ENV", "EXPOSE", "ENTRYPOINT", "ARG", "USER", "VOLUME", "LABEL"
 ];
@@ -41,11 +41,8 @@ function SortableItem({ id, children }) {
 
 export default function DockerFileEditorVisual({ stages, onChange }) {
   const [activeInstruction, setActiveInstruction] = useState(null);
-  // Управляем только активным этапом локально (если нужно)
   const [activeStage, setActiveStage] = useState(stages[0].id);
   const currentStage = stages.find(s => s.id === activeStage);
-
-  // Drag & Drop reorder
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -80,20 +77,19 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto bg-white dark:bg-gray-950 rounded-xl shadow p-6">
+    <div className="max-w-3xl mx-auto bg-white dark:bg-white/5 rounded-xl shadow p-6">
       {/* Stage Switcher */}
       <div className="flex gap-2 mb-4">
         {stages.map(stage => (
           <button
             key={stage.id}
-            className={`px-3 py-1 rounded ${stage.id === activeStage ? "bg-black text-white" : "bg-gray-200 dark:bg-white text-black dark:text-black"}`}
+            className={`px-3 py-1 rounded ${stage.id === activeStage ? "bg-gray-200 dark:bg-white text-black dark:text-black" : "bg-black text-white"}`}
             onClick={() => setActiveStage(stage.id)}
           >
             {stage.name}
           </button>
         ))}
       </div>
-
       {/* Drag & Drop Instructions */}
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
@@ -133,7 +129,9 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
           updateStageInstructions(activeStage, newInstructions);
         }}
         title="Удалить"
-      >✕</button>
+      >
+        <FaTrash />
+      </button>
       {/* Инспектор свойств */}
       {activeInstruction === ins.id && (
         <InspectorPanel instruction={ins} />
@@ -145,7 +143,7 @@ export default function DockerFileEditorVisual({ stages, onChange }) {
         </SortableContext>
       </DndContext>
       <button
-        className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+        className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-white/5 dark:hover:bg-white/10 transition"
         onClick={handleAddInstruction}
       >
         + Добавить инструкцию

@@ -1,4 +1,6 @@
-import {projectService} from '../services/projectService.js';
+import { projectService } from '../services/projectService.js';
+import { getRoleStrategy } from '../strategies/roleStrategy.js';
+
 export async function getAllProjectsPerUser(req, res, next) {
     try {
         const userId = req.user.id;
@@ -33,11 +35,16 @@ export async function createProject(req, res, next) {
 }
 export async function updateProject(req, res, next) {
     try {
-        const userId = req.user.id;
+        const user = req.user;
         const projectId = req.params.id;
         const {name, description} = req.body;
-        const project = await projectService.update(projectId, {name, description}, userId);
-        res.json(project);
+        const project = await projectService.getById(projectId, user.id);
+        const strategy = getRoleStrategy(user.role);
+        if (!strategy.canEdit(user, project)) {
+            return res.status(403).json({ error: 'Нет прав на редактирование' });
+        }
+        const updated = await projectService.update(projectId, {name, description}, user.id);
+        res.json(updated);
     }
     catch(err){
         next(err);
@@ -45,9 +52,14 @@ export async function updateProject(req, res, next) {
 }
 export async function deleteProject(req, res, next) {
     try {
-        const userId = req.user.id;
+        const user = req.user;
         const projectId = req.params.id;
-        const result = await projectService.remove(projectId, userId);
+        const project = await projectService.getById(projectId, user.id);
+        const strategy = getRoleStrategy(user.role);
+        if (!strategy.canDelete(user, project)) {
+            return res.status(403).json({ error: 'Нет прав на удаление' });
+        }
+        const result = await projectService.remove(projectId, user.id);
         res.json(result);
     }
     catch(err){
