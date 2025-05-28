@@ -1,6 +1,6 @@
 export default function DockerfileTextEditor({ content, onChange, lintOutput }) {
   return (
-    <div className="flex bg-white dark:bg-gray-950 rounded-lg border p-2 relative">
+    <div className="flex bg-white dark:bg-white/5 rounded-lg border p-2 relative">
       <div
         className="text-right select-none pr-2 text-gray-400"
         style={{ minWidth: 32, userSelect: "none" }}

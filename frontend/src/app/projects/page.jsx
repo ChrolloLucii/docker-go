@@ -29,6 +29,10 @@ export default function ProjectsPage() {
     setProjects(prev => [project, ...prev]);
   };
 
+  const handleProjectDelete = (id) => {
+    setProjects(prev => prev.filter(p => p.id !== id));
+  };
+
   return (
     <div className="min-h-screen dark:bg-black bg-white">
       <div className="max-w-3xl mx-auto py-16 px-4">
@@ -41,7 +45,7 @@ export default function ProjectsPage() {
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {projects.map(project => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard key={project.id} project={project} onDelete={handleProjectDelete} />
           ))}
         </ul>
         {projects.length === 0 && !error && (

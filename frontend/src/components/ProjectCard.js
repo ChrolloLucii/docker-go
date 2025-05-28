@@ -1,24 +1,20 @@
 import Link from "next/link";
 import { FaTrash } from "react-icons/fa";
+import axios from "axios";
+export default function ProjectCard({ project, onDelete }) {
 const handleDelete = async () => {
   if (confirm('Удалить проект? Это действие необратимо.')) {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: 'DELETE',
+      await axios.delete(`/api/projects/${project.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Ошибка удаления проекта');
-      }
       if (onDelete) onDelete(project.id);
     } catch (e) {
-      alert(e.message || 'Ошибка удаления проекта');
+      alert(e.response?.data?.error || e.message || 'Ошибка удаления проекта');
     }
   }
 };
-export default function ProjectCard({ project, onDelete }) {
   return (
     <li className="group relative border dark:backdrop-blur-md bg-white/5 border-white/10 rounded-2xl shadow-xl hover:shadow-xl transition-all duration-200 p-6 flex flex-col justify-between overflow-hidden">
       {/* SVG круг и логомарка */}
