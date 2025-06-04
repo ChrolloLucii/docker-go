@@ -3,7 +3,7 @@ require('dotenv').config();  // ← only if you use a .env file
 module.exports = {
   development: {
     username: process.env.DB_USER     || 'postgres',
-    password: process.env.DB_PASS     || null,
+    password: process.env.DB_PASS     || '1234',
     database: process.env.DB_NAME     || 'docker_go_dev',
     host:     process.env.DB_HOST     || '127.0.0.1',
     port: process.env.DB_PORT || '5432',

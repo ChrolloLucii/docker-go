@@ -45,7 +45,14 @@ export default function ProjectsPage() {
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {projects.map(project => (
-            <ProjectCard key={project.id} project={project} onDelete={handleProjectDelete} />
+           <ProjectCard
+            key={project.id}
+            project={project}
+            onDelete={handleProjectDelete}
+            onRename={updatedProject => setProjects(prev =>
+              prev.map(p => p.id === updatedProject.id ? updatedProject : p)
+            )}
+          />
           ))}
         </ul>
         {projects.length === 0 && !error && (

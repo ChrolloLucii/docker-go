@@ -27,9 +27,9 @@ class EditorStrategy extends RoleStrategy {
 }
 
 class UserStrategy extends RoleStrategy {
-  canEdit() { return false; }
-  canDelete() { return false; }
-  canInvite() { return false; }
+  canEdit() { return true; }
+  canDelete() { return true; }
+  canInvite() { return true; }
 }
 
 export function getRoleStrategy(role) {
