@@ -12,7 +12,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import EditorToolbar from '@/components/editor/EditorToolbar';
 import DockerfileTextEditor from '@/components/editor/DockerfileTextEditor';
 import { FiCode, FiEye, FiSave, FiPlay, FiSettings } from 'react-icons/fi';
-
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 function dockerfileToStages(text) {
   if (!text) return [{ id: "stage-1", name: "Stage 1", instructions: [] }];
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -73,6 +73,9 @@ export default function EditorPage({ params }) {
 const [stages, setStages] = useState([{ id: "stage-1", name: "Stage 1", instructions: [] }]);
 const [content, setContent] = useState("");
   
+
+
+
   const safeStages = Array.isArray(stages) && stages.length
     ? stages
     : [{ id: "stage-1", name: "Stage 1", instructions: [] }];
@@ -80,7 +83,185 @@ const [content, setContent] = useState("");
   const [activeStage, setActiveStage] = useState(safeStages[0].id);
   const socketRef = useRef();
 
-  // Получаем projectId из params асинхронно
+
+
+  const [dockerBuild, setDockerBuild] = useState({
+    building: false,
+    result: null,
+    error: null
+  });
+const saveContainerState = (containerData) => {
+    const key = `docker-container-${projectId}`;
+    if (containerData) {
+      localStorage.setItem(key, JSON.stringify(containerData));
+    } else {
+      localStorage.removeItem(key);
+    }
+  };
+
+  const loadContainerState = () => {
+    if (!projectId) return null;
+    const key = `docker-container-${projectId}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        localStorage.removeItem(key);
+        return null;
+      }
+    }
+    return null;
+  };
+
+const checkContainerStatus = async (containerName) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `/api/docker/containers/${containerName}/status`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+    return response.data.isRunning;
+  } catch (error) {
+    console.error('Error checking container status:', error);
+    return false;
+  }
+};
+ const handleDockerBuild = async () => {
+    if (!selectedFile || !content) {
+      alert("Выберите файл и убедитесь, что он содержит Dockerfile");
+      return;
+    }
+
+    setDockerBuild({ building: true, result: null, error: null });
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        '/api/docker/build-and-run',
+        {
+          dockerfileContent: content,
+          projectId: projectId
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      const result = response.data;
+      
+      setDockerBuild({
+        building: false,
+        result,
+        error: null
+      });
+
+      saveContainerState(result);
+
+    } catch (error) {
+      setDockerBuild({
+        building: false,
+        result: null,
+        error: error.response?.data?.error || "Ошибка сборки Docker образа"
+      });
+    }
+  };
+
+ const handleStopContainer = async () => {
+    if (!dockerBuild.result?.containerName) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `/api/docker/containers/${dockerBuild.result.containerName}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setDockerBuild(prev => ({
+        ...prev,
+        result: null
+      }));
+
+
+      saveContainerState(null);
+
+    } catch (error) {
+      alert("Ошибка остановки контейнера");
+    }
+  };
+  const handleForceCleanup = async () => {
+  if (!window.confirm("Остановить все контейнеры пользователя? Это действие нельзя отменить.")) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      alert("Токен не найден. Войдите в систему снова.");
+      window.location.href = "/login";
+      return;
+    }
+
+    const response = await axios.delete(
+      '/api/docker/containers/cleanup',
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    
+    console.log('Cleanup response:', response.data);
+
+    setDockerBuild(prev => ({
+      ...prev,
+      result: null
+    }));
+
+    saveContainerState(null);
+    
+    alert(`Успешно: ${response.data.message}`);
+
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    
+    if (error.response?.status === 403) {
+      alert("Нет прав доступа. Проверьте авторизацию.");
+    } else if (error.response?.status === 401) {
+      alert("Необходима авторизация. Войдите в систему снова.");
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    } else {
+      alert(`Ошибка очистки контейнеров: ${error.response?.data?.error || error.message}`);
+    }
+  }
+};
+ useEffect(() => {
+  const savedContainer = loadContainerState(); // ← ДОБАВЬТЕ ЭТУ СТРОКУ
+  
+  if (savedContainer) {
+    checkContainerStatus(savedContainer.containerName).then(isRunning => {
+      if (isRunning) {
+        setDockerBuild(prev => ({
+          ...prev,
+          result: savedContainer
+        }));
+      } else {
+        // Контейнер не запущен, удаляем из localStorage
+        saveContainerState(null);
+      }
+    }).catch(error => {
+      // Игнорируем ошибки проверки статуса
+      console.warn('Container status check failed:', error);
+      saveContainerState(null);
+    });
+  }
+}, [projectId]);
   useEffect(() => {
     const getProjectId = async () => {
       try {
@@ -402,10 +583,24 @@ const handleStagesChange = (newStages) => {
             {isSaving ? 'Сохранение...' : 'Сохранить'}
           </button>
           
-          <button className="btn btn-secondary" disabled={!selectedFile}>
-            <FiPlay />
-            Запустить
-          </button>
+            <button 
+          onClick={handleDockerBuild}
+          disabled={dockerBuild.building || !selectedFile}
+          className="btn btn-secondary"
+        >
+          {dockerBuild.building ? 'Сборка...' : '🐳 Собрать и запустить'}
+        </button>
+
+        {dockerBuild.result && (
+          <>
+            <button 
+              onClick={handleStopContainer}
+              className="btn btn-danger"
+            >
+              ⏹️ Остановить
+            </button>
+          </>
+        )}
           
           <button 
             className="btn btn-ghost"
@@ -414,8 +609,40 @@ const handleStagesChange = (newStages) => {
             <FiSettings />
           </button>
         </div>
+        
       </header>
-
+          {(dockerBuild.result || dockerBuild.error) && (
+        <div className="docker-results">
+          {dockerBuild.result && (
+            <div className="docker-success">
+              <h4>✅ Docker контейнер запущен!</h4>
+              <p>
+                <strong>URL:</strong>{' '}
+                <a 
+                  href={dockerBuild.result.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="docker-link"
+                >
+                  {dockerBuild.result.url}
+                </a>
+              </p>
+              <p><strong>Контейнер:</strong> {dockerBuild.result.containerName}</p>
+              <details>
+                <summary>Вывод сборки</summary>
+                <pre className="docker-output">{dockerBuild.result.buildOutput}</pre>
+              </details>
+            </div>
+          )}
+          
+          {dockerBuild.error && (
+            <div className="docker-error">
+              <h4>❌ Ошибка сборки</h4>
+              <p>{dockerBuild.error}</p>
+            </div>
+          )}
+        </div>
+      )}
       {/* Main Content */}
       <div className="editor-content">
         {/* Sidebar */}
@@ -782,6 +1009,125 @@ const handleStagesChange = (newStages) => {
             font-size: 13px;
           }
         }
+         .docker-results {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 400px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  @keyframes slideInUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .docker-success {
+    color: #4caf50;
+  }
+
+  .docker-success h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .docker-success p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .docker-error {
+    color: #f44336;
+  }
+
+  .docker-error h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .docker-link {
+    color: #64b5f6;
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .docker-link:hover {
+    text-decoration: underline;
+    color: #90caf9;
+  }
+
+  .docker-output {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    margin-top: 8px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  }
+
+  details {
+    margin-top: 12px;
+  }
+
+  details summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 4px 0;
+  }
+
+  details summary:hover {
+    color: rgba(255, 255, 255, 1);
+  }
+
+  // ...остальные стили без изменений...
+
+  @media (max-width: 768px) {
+    .editor-header {
+      padding: 12px 16px;
+    }
+    
+    .editor-header-right {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    
+    .btn {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .docker-results {
+      bottom: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: none;
+    }
+  }
       `}</style>
     </div>
   );

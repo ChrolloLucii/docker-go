@@ -12,7 +12,7 @@ import projectMemberRoutes from './src/routes/projectMember.js';
 import http from 'http';
 import {Server} from 'socket.io';
 import InviteObserver from "./src/observers/inviteObserver.js";
-
+import dockerRoutes from './src/routes/docker.js';
 dotenv.config();
 
 const app = express();
@@ -39,7 +39,7 @@ app.use('/api/projects/:projectId/members', projectMemberRoutes);
 app.use('/api/lint', lintRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/templates', templatesRoutes);
-
+app.use('/api/docker', dockerRoutes)
 // Error middleware должен быть последним
 app.use(errorMiddleware);
 
