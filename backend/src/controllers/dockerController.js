@@ -24,10 +24,8 @@ export async function buildAndRun(req, res) {
   const buildDir = path.join(process.cwd(), 'temp', buildId);
   
   try {
-    // Создаем временную директорию
     await fs.mkdir(buildDir, { recursive: true });
     
-    // Записываем Dockerfile
     const dockerfilePath = path.join(buildDir, 'Dockerfile');
     await fs.writeFile(dockerfilePath, dockerfileContent);
     
@@ -75,7 +73,6 @@ app.get('/', (req, res) => {
           <hr>
           <p>✅ Docker контейнер работает корректно</p>
           <p>🚀 Express сервер запущен</p>
-          <p>📝 Кодировка UTF-8 настроена</p>
         </div>
       </body>
     </html>
@@ -110,7 +107,6 @@ app.listen(port, '0.0.0.0', () => {
             <hr>
             <p>✅ Статический сайт развернут</p>
             <p>🌐 Nginx сервер работает</p>
-            <p>📝 Кодировка UTF-8 настроена</p>
           </div>
         </body>
         </html>
@@ -121,17 +117,15 @@ app.listen(port, '0.0.0.0', () => {
     const imageName = `user-${userId}-project-${projectId}-${buildId}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const containerName = `${imageName}-container`;
     
-    // Останавливаем предыдущий контейнер если есть (Windows-совместимый способ)
     try {
       await executeCommand(`docker stop ${containerName}`);
     } catch (e) {
-      // Игнорируем ошибку если контейнер не существует
+
     }
     
     try {
       await executeCommand(`docker rm ${containerName}`);
     } catch (e) {
-      // Игнорируем ошибку если контейнер не существует
     }
     
     // Собираем образ с timeout
@@ -172,7 +166,7 @@ app.listen(port, '0.0.0.0', () => {
       suggestion: getErrorSuggestion(error.message)
     });
   } finally {
-    // Очищаем временные файлы
+
     try {
       await fs.rm(buildDir, { recursive: true, force: true });
     } catch (cleanupError) {
@@ -185,7 +179,7 @@ export async function stopContainer(req, res) {
   const { containerName } = req.params;
   const userId = req.user.id;
   
-  // Проверяем, что пользователь может остановить только свои контейнеры
+
   if (!containerName.includes(`user-${userId}`)) {
     return res.status(403).json({ error: 'Access denied' });
   }
@@ -194,13 +188,11 @@ export async function stopContainer(req, res) {
     try {
       await executeCommand(`docker stop ${containerName}`);
     } catch (e) {
-      // Игнорируем ошибку если контейнер уже остановлен
     }
     
     try {
       await executeCommand(`docker rm ${containerName}`);
     } catch (e) {
-      // Игнорируем ошибку если контейнер уже удален
     }
     
     res.json({ success: true, message: 'Container stopped and removed' });
@@ -308,8 +300,8 @@ function executeCommandWithTimeout(command, options, timeout) {
   });
 }
 export async function getContainerStatus(req, res) {
-  const { containerName } = req.params;  // ← ДОБАВЬТЕ ЭТУ СТРОКУ
-  const userId = req.user.id;           // ← ДОБАВЬТЕ ЭТУ СТРОКУ
+  const { containerName } = req.params; 
+  const userId = req.user.id;
   
   if (!containerName.includes(`user-${userId}`)) {
     return res.status(403).json({ error: 'Access denied' });
@@ -340,7 +332,6 @@ export async function cleanupAllContainers(req, res) {
     const errors = [];
 
     for (const containerName of containerNames) {
-      // НЕ возвращай 403, просто пропусти чужие контейнеры
       if (!containerName.includes(`user-${userId}`)) {
         console.log('Пропуск чужого контейнера:', containerName, 'для userId:', userId);
         continue;
