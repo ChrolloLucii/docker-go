@@ -117,7 +117,7 @@ const saveContainerState = (containerData) => {
 
 const checkContainerStatus = async (containerName) => {
   try {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     const response = await axios.get(
       `/api/docker/containers/${containerName}/status`,
       {
@@ -139,7 +139,7 @@ const checkContainerStatus = async (containerName) => {
     setDockerBuild({ building: true, result: null, error: null });
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const response = await axios.post(
         '/api/docker/build-and-run',
         {
@@ -158,7 +158,6 @@ const checkContainerStatus = async (containerName) => {
         result,
         error: null
       });
-
       saveContainerState(result);
 
     } catch (error) {
@@ -174,7 +173,7 @@ const checkContainerStatus = async (containerName) => {
     if (!dockerBuild.result?.containerName) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       await axios.delete(
         `/api/docker/containers/${dockerBuild.result.containerName}`,
         {
@@ -186,7 +185,6 @@ const checkContainerStatus = async (containerName) => {
         ...prev,
         result: null
       }));
-
 
       saveContainerState(null);
 
@@ -200,8 +198,7 @@ const checkContainerStatus = async (containerName) => {
   }
 
   try {
-    const token = localStorage.getItem("token");
-    
+    const token = getToken();
     if (!token) {
       alert("Токен не найден. Войдите в систему снова.");
       window.location.href = "/login";
@@ -225,7 +222,6 @@ const checkContainerStatus = async (containerName) => {
     }));
 
     saveContainerState(null);
-    
     alert(`Успешно: ${response.data.message}`);
 
   } catch (error) {
@@ -290,7 +286,7 @@ const checkContainerStatus = async (containerName) => {
   }, [selectedFile?.id]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -325,7 +321,7 @@ const checkContainerStatus = async (containerName) => {
   useEffect(() => {
     if (!projectId) return;
 
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) {
       window.location.href = "/login";
       return;
@@ -352,7 +348,7 @@ const checkContainerStatus = async (containerName) => {
     
     const name = prompt("Имя нового файла (например, Dockerfile):");
     if (!name) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       const res = await axios.post(
         `/api/projects/${projectId}/files`,
@@ -376,7 +372,7 @@ const checkContainerStatus = async (containerName) => {
     
     const newName = prompt("Новое имя файла:", file.name);
     if (!newName || newName === file.name) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.put(
         `/api/projects/${projectId}/files/${file.id}`,
@@ -394,7 +390,7 @@ const checkContainerStatus = async (containerName) => {
     if (!projectId) return;
     
     if (!window.confirm("Удалить файл?")) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.delete(
         `/api/projects/${projectId}/files/${file.id}`,
@@ -453,7 +449,7 @@ const checkContainerStatus = async (containerName) => {
     
     setInviteError(""); 
     setInviteSuccess("");
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.post(
         `/api/projects/${projectId}/members/by-username`,
@@ -485,7 +481,7 @@ const handleStagesChange = (newStages) => {
     if (!selectedFile || !projectId) return;
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       await axios.put(
         `/api/projects/${projectId}/files/${selectedFile.id}`,
         {
