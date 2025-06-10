@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { getToken } from "@/utils/tokenCookie";
 
 function TabButton({ active, onClick, children }) {
   return (
@@ -23,7 +24,7 @@ export default function AdminPage() {
 
   // Загрузка данных
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) {
       window.location.href = "/login";
       return;
@@ -49,7 +50,7 @@ export default function AdminPage() {
 
   // Управление ролями
   const handleRoleChange = async (userId, newRole) => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.put(`/api/admin/users/${userId}/role`, { role: newRole }, { headers: { Authorization: `Bearer ${token}` } });
       setUsers(users => users.map(u => u.id === userId ? { ...u, role: newRole } : u));
@@ -61,7 +62,7 @@ export default function AdminPage() {
   // Удаление пользователя
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("Удалить пользователя?")) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.delete(`/api/admin/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setUsers(users => users.filter(u => u.id !== userId));
@@ -73,7 +74,7 @@ export default function AdminPage() {
   // Удаление проекта
   const handleDeleteProject = async (projectId) => {
     if (!window.confirm("Удалить проект?")) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.delete(`/api/admin/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } });
       setProjects(projects => projects.filter(p => p.id !== projectId));
@@ -85,7 +86,7 @@ export default function AdminPage() {
   // Удаление шаблона
   const handleDeleteTemplate = async (templateId) => {
     if (!window.confirm("Удалить шаблон?")) return;
-    const token = localStorage.getItem("token");
+    const token = getToken();
     try {
       await axios.delete(`/api/templates/${templateId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTemplates(templates => templates.filter(t => t.id !== templateId));

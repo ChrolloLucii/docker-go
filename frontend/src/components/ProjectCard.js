@@ -2,12 +2,13 @@ import Link from "next/link";
 import { FaTrash } from "react-icons/fa";
 import { HiOutlinePencil } from "react-icons/hi";
 import axios from "axios";
+import { getToken } from "@/utils/tokenCookie";
 
 export default function ProjectCard({ project, onDelete, onRename }) {
   const handleDelete = async () => {
     if (confirm('Удалить проект? Это действие необратимо.')) {
       try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         await axios.delete(`/api/projects/${project.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -22,7 +23,7 @@ export default function ProjectCard({ project, onDelete, onRename }) {
     const newName = prompt("Новое имя проекта:", project.name);
     if (!newName || newName === project.name) return;
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await axios.put(
         `/api/projects/${project.id}`,
         { name: newName, description: project.description },

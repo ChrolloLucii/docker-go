@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { getToken } from "@/utils/tokenCookie";
 
 export default function NewProjectForm({ onCreated }) {
   const [name, setName] = useState("");
@@ -12,7 +13,7 @@ export default function NewProjectForm({ onCreated }) {
     setError("");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const res = await axios.post(
         "/api/projects",
         { name, description },

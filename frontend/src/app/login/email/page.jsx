@@ -1,6 +1,7 @@
 'use client';
 import { useState } from "react";
 import axios from "axios";
+import { setToken } from "@/utils/tokenCookie";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,8 +13,8 @@ export default function LoginPage() {
     setError("");
     try {
       const res = await axios.post("/api/auth/login", { email, password });
-      // Сохраняем токен в localStorage
-      localStorage.setItem("token", res.data.token);
+      // Сохраняем токен в cookie
+      setToken(res.data.token);
       window.location.href = "/projects"; // или dashboard
     } catch (e) {
       setError(e.response?.data?.error || "Ошибка входа");

@@ -4,6 +4,7 @@ import "./globals.css";
 import { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import useToast from '@/components/ui/useToast';
+import { getToken } from "@/utils/tokenCookie";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,7 @@ export default function RootLayout({ children }) {
 
   useEffect(() => {
     // Получаем userId из localStorage токена (JWT)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = typeof window !== 'undefined' ? getToken() : null;
     let userId = null;
     if (token) {
       try {

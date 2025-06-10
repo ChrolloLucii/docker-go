@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import ProjectCard from "@/components/ProjectCard";
 import NewProjectForm from "@/components/newProjectForm";
+import { getToken } from "@/utils/tokenCookie";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     if (!token) {
       window.location.href = "/login";
       return;

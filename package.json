@@ -31,5 +31,8 @@
   "bugs": {
     "url": "https://github.com/ChrolloLucii/docker-go/issues"
   },
-  "homepage": "https://github.com/ChrolloLucii/docker-go#readme"
+  "homepage": "https://github.com/ChrolloLucii/docker-go#readme",
+  "dependencies": {
+    "js-cookie": "^3.0.5"
+  }
 }

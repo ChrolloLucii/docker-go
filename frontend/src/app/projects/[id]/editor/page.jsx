@@ -12,6 +12,7 @@ import Sidebar from '@/components/editor/Sidebar';
 import EditorToolbar from '@/components/editor/EditorToolbar';
 import DockerfileTextEditor from '@/components/editor/DockerfileTextEditor';
 import { FiCode, FiEye, FiSave, FiPlay, FiSettings } from 'react-icons/fi';
+import { getToken, setToken, removeToken } from "@/utils/tokenCookie";
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 function dockerfileToStages(text) {
   if (!text) return [{ id: "stage-1", name: "Stage 1", instructions: [] }];
@@ -234,7 +235,7 @@ const checkContainerStatus = async (containerName) => {
       alert("Нет прав доступа. Проверьте авторизацию.");
     } else if (error.response?.status === 401) {
       alert("Необходима авторизация. Войдите в систему снова.");
-      localStorage.removeItem("token");
+      removeToken();
       window.location.href = "/login";
     } else {
       alert(`Ошибка очистки контейнеров: ${error.response?.data?.error || error.message}`);
