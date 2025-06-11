@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -12,7 +12,8 @@ import Sidebar from '@/components/editor/Sidebar';
 import EditorToolbar from '@/components/editor/EditorToolbar';
 import DockerfileTextEditor from '@/components/editor/DockerfileTextEditor';
 import { FiCode, FiEye, FiSave, FiPlay, FiSettings } from 'react-icons/fi';
-import { getToken, setToken, removeToken } from "@/utils/tokenCookie";
+import { getToken } from "@/utils/tokenCookie";
+import { SocketContext } from "@/context/SocketContext";
 axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 function dockerfileToStages(text) {
   if (!text) return [{ id: "stage-1", name: "Stage 1", instructions: [] }];
@@ -74,15 +75,13 @@ export default function EditorPage({ params }) {
 const [stages, setStages] = useState([{ id: "stage-1", name: "Stage 1", instructions: [] }]);
 const [content, setContent] = useState("");
   
-
-
+const socket = useContext(SocketContext);
 
   const safeStages = Array.isArray(stages) && stages.length
     ? stages
     : [{ id: "stage-1", name: "Stage 1", instructions: [] }];
 
   const [activeStage, setActiveStage] = useState(safeStages[0].id);
-  const socketRef = useRef();
 
 
 
@@ -136,10 +135,16 @@ const checkContainerStatus = async (containerName) => {
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      alert("Вы не авторизованы. Пожалуйста, войдите в систему.");
+      window.location.href = "/login";
+      return;
+    }
+
     setDockerBuild({ building: true, result: null, error: null });
     
     try {
-      const token = getToken();
       const response = await axios.post(
         '/api/docker/build-and-run',
         {
@@ -274,16 +279,13 @@ const checkContainerStatus = async (containerName) => {
   }, [params]);
 
   useEffect(() => {
-    if (selectedFile?.id) {
-      socketRef.current = io(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000");
-      socketRef.current.emit('joinfile', selectedFile.id);
-      
+    if (selectedFile?.id && socket) {
+      socket.emit('joinfile', selectedFile.id);
       return () => {
-        socketRef.current.emit('leavefile', selectedFile.id);
-        socketRef.current.disconnect();
+        socket.emit('leavefile', selectedFile.id);
       };
     }
-  }, [selectedFile?.id]);
+  }, [selectedFile?.id, socket]);
 
   useEffect(() => {
     const token = getToken();
@@ -314,6 +316,11 @@ const checkContainerStatus = async (containerName) => {
   }, [selectedFile]);
 
   useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
     setIsClient(true);
   }, []);
 
@@ -438,8 +445,8 @@ const checkContainerStatus = async (containerName) => {
     const text = e.target.value;
     setContent(text);
     setStages(dockerfileToStages(text));
-    if (selectedFile?.id && socketRef.current) {
-      socketRef.current.emit('fileEdit', { fileId: selectedFile.id, content: text, userId: currentUserId });
+    if (selectedFile?.id && socket) {
+      socket.emit('fileEdit', { fileId: selectedFile.id, content: text, userId: currentUserId });
     }
   };
 
@@ -472,8 +479,8 @@ const handleStagesChange = (newStages) => {
   setStages(newStages);
   const newContent = stagesToDockerfile(newStages);
   setContent(newContent);
-  if (selectedFile?.id && socketRef.current) {
-    socketRef.current.emit('fileEdit', { fileId: selectedFile.id, content: newContent, userId: currentUserId });
+  if (selectedFile?.id && socket) {
+    socket.emit('fileEdit', { fileId: selectedFile.id, content: newContent, userId: currentUserId });
   }
 };
 
@@ -518,17 +525,17 @@ const handleStagesChange = (newStages) => {
 }, [content, runLint]);
 
   useEffect(() => {
-    if (!socketRef.current) return;
-    socketRef.current.on('fileEdited', ({ fileId, content, userId }) => {
+    if (!socket) return;
+    socket.on('fileEdited', ({ fileId, content, userId }) => {
       if (fileId === selectedFile?.id && userId !== currentUserId) {
         setContent(content);
         setStages(dockerfileToStages(content));
       }
     });
     return () => {
-      socketRef.current.off('fileEdited');
+      socket.off('fileEdited');
     };
-  }, [selectedFile?.id, currentUserId]);
+  }, [selectedFile?.id, currentUserId, socket]);
 
   if (!isClient || isLoading || !projectId) {
     return (
@@ -792,12 +799,10 @@ const handleStagesChange = (newStages) => {
           gap: 6px;
           font-size: 14px;
           color: rgba(255, 255, 255, 0.7);
-        }
-
-        .status-dot {
+        }        .status-dot {
           width: 8px;
           height: 8px;
-          background: #00ff88;
+          background: #6ec1e4;
           border-radius: 50%;
           animation: pulse 2s infinite;
         }

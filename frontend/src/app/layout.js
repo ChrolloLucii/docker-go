@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import useToast from '@/components/ui/useToast';
 import { getToken } from "@/utils/tokenCookie";
+import { SocketContext } from "@/context/SocketContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,16 +35,13 @@ export default function RootLayout({ children }) {
       socketRef.current = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000');
       socketRef.current.emit('registerUser', userId);
       socketRef.current.on('project:invited', (invite) => {
-  const inviter = invite.inviter;
-  let inviterName =
-    inviter?.username ||
-    'Пользователь';
-
-  showToast(
-    `Вас пригласили в проект! Пригласил: ${inviterName}`,
-    { type: 'info' }
-  );
-});
+        const inviter = invite.inviter;
+        let inviterName = inviter?.username || 'Пользователь';
+        showToast(
+          `Вас пригласили в проект! Пригласил: ${inviterName}`,
+          { type: 'info' }
+        );
+      });
     }
     return () => {
       if (socketRef.current) {
@@ -54,11 +52,13 @@ export default function RootLayout({ children }) {
   }, [showToast]);
 
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ToastContainer />
-        {children}
-      </body>
-    </html>
+    <SocketContext.Provider value={socketRef.current}>
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <ToastContainer />
+          {children}
+        </body>
+      </html>
+    </SocketContext.Provider>
   );
 }

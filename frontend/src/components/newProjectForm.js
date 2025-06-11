@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { getToken } from "@/utils/tokenCookie";
+import styles from "@/styles/newProjectForm.module.css";
 
 export default function NewProjectForm({ onCreated }) {
   const [name, setName] = useState("");
@@ -28,30 +29,50 @@ export default function NewProjectForm({ onCreated }) {
       setLoading(false);
     }
   };
-
   return (
-    <form onSubmit={handleCreate} className="mb-6">
-      <input
-        className="border  px-3 py-2 mr-2 dark:text-gray-100 text-gray-700 rounded-xl"
-        placeholder="Название проекта"
-        value={name}
-        onChange={e => setName(e.target.value)}
-        required
-      />
-      <input
-        className="border px-3 py-2 mr-2 dark:text-gray-100 text-gray-700 rounded-xl"
-        placeholder="Описание (необязательно)"
-        value={description}
-        onChange={e => setDescription(e.target.value)}
-      />
-      <button
-        type="submit"
-        className="bg-black dark:bg-white dark:text-black text-white px-4 py-2 rounded"
-        disabled={loading}
-      >
-        {loading ? "Создание..." : "Создать"}
-      </button>
-      {error && <div className="text-red-500 mt-2">{error}</div>}
-    </form>
+    <div className={styles.formContainer}>
+      <h2 className={styles.formTitle}>
+        <span className={styles.formIcon}>➕</span>
+        Создать новый проект
+      </h2>
+      
+      <form onSubmit={handleCreate} className={styles.form}>
+        <div className={styles.inputGroup}>
+          <input
+            className={styles.input}
+            placeholder="Название проекта"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+          <input
+            className={styles.input}
+            placeholder="Описание (необязательно)"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+          />
+        </div>
+        
+        <button
+          type="submit"
+          className={`${styles.submitButton} ${loading ? styles.loading : ''}`}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <span className={styles.spinner}></span>
+              Создание...
+            </>
+          ) : (
+            <>
+              <span className={styles.buttonIcon}></span>
+              Создать
+            </>
+          )}
+        </button>
+        
+        {error && <div className={styles.errorMessage}>{error}</div>}
+      </form>
+    </div>
   );
 }

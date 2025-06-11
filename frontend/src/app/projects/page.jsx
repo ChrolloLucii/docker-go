@@ -4,6 +4,7 @@ import axios from "axios";
 import ProjectCard from "@/components/ProjectCard";
 import NewProjectForm from "@/components/newProjectForm";
 import { getToken } from "@/utils/tokenCookie";
+import styles from "@/styles/projects.module.css";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -33,35 +34,45 @@ export default function ProjectsPage() {
   const handleProjectDelete = (id) => {
     setProjects(prev => prev.filter(p => p.id !== id));
   };
-
   return (
-    <div className="min-h-screen dark:bg-black bg-white">
-      <div className="max-w-3xl mx-auto py-16 px-4">
-        <div className="flex items-center justify-between mb-10">
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+    <div className={styles.projectsContainer}>
+      <div className={styles.backgroundEffects}>
+        <div className={styles.gridPattern}></div>
+        <div className={styles.glowOrb}></div>
+      </div>
+      
+      <div className={styles.contentWrapper}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>
+            <span className={styles.titleIcon}>🗂️</span>
             Мои проекты
           </h1>
         </div>
-        <NewProjectForm onCreated={handleProjectCreated} />
-        {error && <div className="text-red-500 mb-4">{error}</div>}
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {projects.map(project => (
-           <ProjectCard
-            key={project.id}
-            project={project}
-            onDelete={handleProjectDelete}
-            onRename={updatedProject => setProjects(prev =>
-              prev.map(p => p.id === updatedProject.id ? updatedProject : p)
-            )}
-          />
-          ))}
-        </ul>
-        {projects.length === 0 && !error && (
-          <div className="text-center text-gray-500 mt-16">
-            <div className="text-5xl mb-4">🗂️</div>
-            <div className="text-lg">У вас пока нет проектов.</div>
+        
+        <div className={styles.mainContent}>
+          <NewProjectForm onCreated={handleProjectCreated} />
+          {error && <div className={styles.errorMessage}>{error}</div>}
+          
+          <div className={styles.projectsGrid}>
+            {projects.map(project => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onDelete={handleProjectDelete}
+                onRename={updatedProject => setProjects(prev =>
+                  prev.map(p => p.id === updatedProject.id ? updatedProject : p)
+                )}
+              />
+            ))}
           </div>
-        )}
+          
+          {projects.length === 0 && !error && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>🗂️</div>
+              <div className={styles.emptyText}>У вас пока нет проектов.</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

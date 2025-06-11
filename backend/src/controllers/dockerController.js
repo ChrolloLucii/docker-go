@@ -29,25 +29,26 @@ export async function buildAndRun(req, res) {
     const dockerfilePath = path.join(buildDir, 'Dockerfile');
     await fs.writeFile(dockerfilePath, dockerfileContent);
     
-    // Создаем package.json для Node.js проектов
-    if (dockerfileContent.includes('node:') || dockerfileContent.includes('npm')) {
-      const packageJson = {
-        "name": "docker-test-app",
-        "version": "1.0.0",
-        "scripts": {
-          "start": "node server.js",
-          "dev": "node server.js"
-        },
-        "dependencies": {
-          "express": "^4.18.0"
-        }
-      };
-      await fs.writeFile(
-        path.join(buildDir, 'package.json'), 
-        JSON.stringify(packageJson, null, 2)
-      );
-      
-      // Создаем простой сервер
+    // Если в Dockerfile есть COPY . ., но нет исходников, создаём минимальный app.js
+    if (dockerfileContent.includes('COPY . .')) {
+      const files = await fs.readdir(buildDir);
+      // Если нет app.js, index.js и server.js, создаём app.js
+      if (!files.includes('app.js') && !files.includes('index.js') && !files.includes('server.js')) {
+        const minimalApp = `
+const http = require('http');
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end('<h1>🐳 Минимальное Node.js приложение работает!</h1>');
+}).listen(port, () => {
+  console.log('Server running on port', port);
+});
+`;
+        await fs.writeFile(path.join(buildDir, 'app.js'), minimalApp);
+      }
+    }
+    // ГАРАНТИРОВАННО создаём server.js для Node.js проектов, если его нет
+    if ((dockerfileContent.includes('node:') || dockerfileContent.includes('npm')) && !(await fs.readdir(buildDir)).includes('server.js')) {
       const serverJs = `
 const express = require('express');
 const app = express();
@@ -68,8 +69,8 @@ app.get('/', (req, res) => {
           <h1>🐳 Приложение успешно запущено!</h1>
           <p><strong>Проект ID:</strong> ${projectId}</p>
           <p><strong>Build ID:</strong> ${buildId}</p>
-          <p><strong>Время:</strong> \${new Date().toLocaleString('ru-RU')}</p>
-          <p><strong>Порт:</strong> \${port}</p>
+          <p><strong>Время:</strong> "+ new Date().toLocaleString('ru-RU') +"</p>
+          <p><strong>Порт:</strong> "+ (process.env.PORT || 3000) +"</p>
           <hr>
           <p>✅ Docker контейнер работает корректно</p>
           <p>🚀 Express сервер запущен</p>
@@ -134,6 +135,8 @@ app.listen(port, '0.0.0.0', () => {
       { cwd: buildDir },
       60000 // 60 секунд
     );
+    console.log('Docker build stdout:', buildResult.stdout);
+    console.log('Docker build stderr:', buildResult.stderr);
     
     // Определяем порт контейнера и хоста
     const containerPort = dockerfileContent.includes('EXPOSE') 
@@ -142,10 +145,76 @@ app.listen(port, '0.0.0.0', () => {
     const hostPort = 3000 + (parseInt(userId.slice(-3), 16) % 1000);
     
     // Запускаем контейнер
-    const runResult = await executeCommand(
-      `docker run -d -p ${hostPort}:${containerPort} --name ${containerName} ${imageName}`
-    );
-    
+    let runResult;
+    try {
+      runResult = await executeCommand(
+        `docker run -d -p ${hostPort}:${containerPort} --name ${containerName} ${imageName}`
+      );
+      console.log('Docker run stdout:', runResult.stdout);
+      console.log('Docker run stderr:', runResult.stderr);
+    } catch (runErr) {
+      console.error('Docker run error:', runErr);
+      // Получаем список контейнеров и их статусы
+      try {
+        const psAll = await executeCommand(`docker ps -a --filter "name=${containerName}" --format "{{.Names}}: {{.Status}}"`);
+        console.log('docker ps -a:', psAll.stdout);
+      } catch (e) {
+        console.error('docker ps -a error:', e);
+      }
+      return res.status(500).json({
+        error: 'Ошибка запуска контейнера',
+        buildId,
+        imageName,
+        containerName,
+        containerPort,
+        hostPort,
+        buildOutput: buildResult.stdout + buildResult.stderr,
+        runOutput: runErr.stdout + runErr.stderr,
+        logs: 'Контейнер не был запущен. См. buildOutput и runOutput.'
+      });
+    }
+
+    // Проверяем, что контейнер реально работает
+    let isRunning = false;
+    try {
+      const psResult = await executeCommand(`docker ps --filter "name=${containerName}" --format "{{.Names}}"`);
+      isRunning = psResult.stdout.trim().includes(containerName);
+      console.log('docker ps result:', psResult.stdout);
+    } catch (e) {
+      console.error('docker ps error:', e);
+    }
+
+    if (!isRunning) {
+      // Получаем логи контейнера
+      let logs = '';
+      try {
+        const logsResult = await executeCommand(`docker logs ${containerName}`);
+        logs = logsResult.stdout + logsResult.stderr;
+        console.log('docker logs:', logs);
+      } catch (e) {
+        logs = 'Не удалось получить логи контейнера.';
+        console.error('docker logs error:', e);
+      }
+      // Получаем docker inspect
+      try {
+        const inspectResult = await executeCommand(`docker inspect ${containerName}`);
+        console.log('docker inspect:', inspectResult.stdout);
+      } catch (e) {
+        console.error('docker inspect error:', e);
+      }
+      return res.status(500).json({
+        error: 'Контейнер не запущен или завершился с ошибкой',
+        buildId,
+        imageName,
+        containerName,
+        containerPort,
+        hostPort,
+        buildOutput: buildResult.stdout + buildResult.stderr,
+        runOutput: runResult.stdout + runResult.stderr,
+        logs
+      });
+    }
+
     res.json({
       success: true,
       buildId,
